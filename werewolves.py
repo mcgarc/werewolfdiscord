@@ -1,13 +1,21 @@
+ROLES = {
+        0: 'Villager',
+        1: 'Werewolf'
+        }
+
+
 class Player:
     """
     """
 
-    def __init__(self, user_id):
-        self._user_id = user_id
+    def __init__(self, user):
+        self._user = user
         self._alive = True
+        self._role = 0
 
-    def vote(self, player):
-        pass
+    @property
+    def str_role(self):
+        return ROLES[self._role]
 
 
 class Game:
@@ -15,10 +23,25 @@ class Game:
     """
 
     def __init__(self, host, channel):
-        self._players = [host]
-        self._host = host
+        host_id = host.id
+        self._players = {host_id: Player(host)}
+        self._host_id = host_id
         self._channel = channel
         self._day = True
+        self._started = False
+        self._command_dispatcher = {
+                'join': self.join,
+                'reset': self.reset,
+                'remind': self.remind,
+                }
+
+    @property
+    def host(self):
+        return self._players[self._host_id]
+
+    @property
+    def channel(self):
+        return self._channel
 
     @property
     def day(self):
@@ -33,7 +56,7 @@ class Game:
 
     @property
     def user_ids(self):
-        return [p.user_id for p in self.players]
+        return self._players.keys()
 
     @property
     def players(self):
@@ -43,6 +66,9 @@ class Game:
     def alive_players(self):
         return [p for p in self.players if p.alive]
 
+    def get_player(self, user):
+        return self._players[user.id]
+
     def end_game(self):
         self = None
 
@@ -51,17 +77,44 @@ class Game:
         """
         await self._channel.send(msg)
 
+    async def direct_message(self, user, msg):
+        """
+        """
+        await user.send(msg)
 
-    def add_player(self, user):
+    async def add_player(self, user):
         user_id = user.id
         if user_id in self.user_ids:
-            self.message("Can't join the same game twice!")
+            await self.announce(f'{user.mention}, you can\'t join twice!')
         else:
-            self._players.append(user)
+            self._players[user_id] = Player(user)
+            await self.announce(f'{user.mention} has joined the game!')
 
-    async def command(self, player, command):
-        commands = []
-        if command not in commands:
+    async def command(self, user, command):
+        command = command.split(' ')
+        method = command[0]
+        args = command[1:]
+        print(method, args)
+        if method not in self._command_dispatcher.keys():
             await self.announce('Unknown command')
         else:
-            pass
+            method = self._command_dispatcher[method]
+            await method(user, *args)
+        return 
+
+    # User commands
+
+    async def join(self, user):
+        await self.add_player(user)
+
+    async def reset(self, user):
+        await self.announce(f'{user.mention} has reset the game')
+        self.__init__(self.host, self.channel)
+
+    async def remind(self, user):
+        role = self.get_player(user).str_role
+        msg = f'You are a {role}'
+        await self.direct_message(user, msg)
+
+#    async def players(self, user):
+#        await se

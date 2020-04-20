@@ -4,15 +4,11 @@ import config
 from werewolves import Game
 
 client = discord.Client()
-game = None
+games = {}
 
 async def start_game(host, channel):
-
-    global game
-
-    game = Game(host, channel)
-    msg = f'{host.mention} has started a new game of Werewolves!'
-
+    games[channel.id] = Game(host, channel)
+    msg = f'{host.mention} is starting a new game of Werewolves!'
     await channel.send(msg)
 
     return
@@ -20,10 +16,15 @@ async def start_game(host, channel):
 @client.event
 async def on_message(message):
 
-    # I'm not sorry.
-    global game
+    # Get channel game
+    channel_id = message.channel.id
+    try:
+        game = games[channel_id]
+    except KeyError:
+        game = None
 
-    print(game)
+    print(games)
+
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
@@ -45,11 +46,14 @@ async def on_message(message):
         return
 
     if game is None:
-        # Start a new game with the starter as host
-        await start_game(message.author, message.channel)
+        if content == 'start':
+            await start_game(message.author, message.channel)
+        else:
+            msg = "No game has yet started, use '!ww start'"
+            await message.channel.send(msg)
         return
 
-    if message.author in game.players:
+    if message.author.id in game.players:
         await game.command(message.author, content)
         return
 
