@@ -66,5 +66,3 @@ async def on_ready():
 
 
 client.run(config.TOKEN)
-
-

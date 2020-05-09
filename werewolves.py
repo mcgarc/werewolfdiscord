@@ -1,7 +1,32 @@
 ROLES = {
-        0: 'Villager',
-        1: 'Werewolf'
+        0: Villager,
+        1: Werewolf
         }
+
+class Role:
+    """
+    """
+
+    def __str__(self):
+        raise NotImplemented
+
+    def day_action(self):
+        raise NotImplemented
+
+
+class Villager(Role):
+
+    def __str__(self):
+        return 'Villager'
+
+    def day_action(self):
+        pass
+
+
+class Werewolf(Role):
+
+    def __str__(self):
+        return 'Werewolf'
 
 
 class Player:
@@ -15,8 +40,7 @@ class Player:
 
     @property
     def str_role(self):
-        return ROLES[self._role]
-
+        return str(ROLES[self._role])
 
 class Game:
     """
